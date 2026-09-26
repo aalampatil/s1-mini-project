@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Airline Reservation</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <main class="shell">
+    <header>
+      <p class="eyebrow">AIRLINE RESERVATION SYSTEM</p>
+      <h1>Book your next flight.</h1>
+      <p class="muted">Seats are reserved through Oracle PL/SQL row locking.</p>
+    </header>
+    <section class="card">
+      <h2>New booking</h2>
+      <form id="booking-form">
+        <label>Flight<select id="flight_id" required></select></label>
+        <div class="grid">
+          <label>Full name<input id="full_name" required></label>
+          <label>Email<input id="email" type="email" required></label>
+          <label>Phone<input id="phone" required></label>
+          <label>Seat<select id="seat_no" required></select></label>
+        </div>
+        <button>Confirm booking</button>
+      </form>
+    </section>
+    <section class="card">
+      <h2>Cancel booking</h2>
+      <form id="cancel-form" class="inline">
+        <input id="booking_ref" placeholder="Booking reference" required>
+        <button class="secondary">Cancel and calculate refund</button>
+      </form>
+    </section>
+    <p id="message" class="message"></p>
+  </main>
+  <script>
+    const message = document.getElementById("message");
+    const show = (text, good = false) => {
+      message.textContent = text;
+      message.className = `message ${good ? "good" : "bad"}`;
+    };
+    async function loadFlights() {
+      const response = await fetch("/api/flights");
+      const flights = await response.json();
+      if (!response.ok) throw new Error(flights.error);
+      const select = document.getElementById("flight_id");
+      select.innerHTML = flights.map((flight) =>
+        `<option value="${flight.id}">${flight.flight_no} · ${flight.route} · ${flight.departure} · ₹${flight.fare}</option>`
+      ).join("");
+      await loadSeats();
+    }
+    async function loadSeats() {
+      const response = await fetch(`/api/flights/${document.getElementById("flight_id").value}/seats`);
+      const seats = await response.json();
+      if (!response.ok) throw new Error(seats.error);
+      document.getElementById("seat_no").innerHTML =
+        seats.map((seat) => `<option>${seat}</option>`).join("");
+    }
+    document.getElementById("flight_id").addEventListener("change", () =>
+      loadSeats().catch((error) => show(error.message)));
+    document.getElementById("booking-form").addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const data = Object.fromEntries(["flight_id", "full_name", "email", "phone", "seat_no"]
+        .map((id) => [id, document.getElementById(id).value]));
+      const response = await fetch("/api/book", {
+        method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(data)
+      });
+      const result = await response.json();
+      show(response.ok ? `Booking confirmed: ${result.booking_ref}` : result.error, response.ok);
+      if (response.ok) await loadSeats();
+    });
+    document.getElementById("cancel-form").addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const response = await fetch("/api/cancel", {
+        method: "POST", headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({booking_ref: document.getElementById("booking_ref").value})
+      });
+      const result = await response.json();
+      show(response.ok ? `Booking cancelled. Refund: ₹${result.refund.toFixed(2)}` : result.error, response.ok);
+      if (response.ok) await loadFlights();
+    });
+    loadFlights().catch((error) => show(error.message || "Unable to load flights.", false));
+  </script>
+</body>
+</html>

@@ -1,15 +1,15 @@
 STUDENT PERFORMANCE ANALYSIS
 ================================
-Students analysed: 15
+Students analysed: 25
 Pass rate: 100.0%
-Class average: 76.58
+Class average: 80.09
 Highest average: 95.67
 Lowest average: 48.33
-Attendance/score correlation: 0.98
+Attendance/score correlation: 0.94
 
 Subject averages:
-  Math:    75.60
-  Science: 76.87
-  English: 77.27
+  Math:    79.12
+  Science: 79.52
+  English: 81.64
 
-Top student: Myra (95.67)
+Top student: Student 7 (95.67)

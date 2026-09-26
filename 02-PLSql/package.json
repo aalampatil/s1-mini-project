@@ -1,0 +1,14 @@
+{
+  "name": "airline-reservation-ui",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Minimal JavaScript UI and API for the Airline Reservation PL/SQL project",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "oracledb": "^6.7.0"
+  }
+}

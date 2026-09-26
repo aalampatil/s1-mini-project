@@ -1,16 +1,26 @@
 name,gender,attendance,math,science,english,total,average,grade,passed,rank
-Myra,F,99,97,96,94,287,95.67,A+,True,1
-Diya,F,98,95,93,97,285,95.0,A+,True,2
-Meera,F,94,91,89,93,273,91.0,A+,True,3
-Aarav, M,96,88,92,85,265,88.33,A,True,4
-Reyansh,M,93,86,82,89,257,85.67,A,True,5
-Ananya,F,91,79,84,88,251,83.67,A,True,6
-Ishita,F,88,83,79,86,248,82.67,A,True,7
-Vihaan,M,89,81,86,80,247,82.33,A,True,8
-Kabir,M,82,74,71,77,222,74.0,B,True,9
-Vivaan,M,85,72,76,69,217,72.33,B,True,10
-Saanvi,F,87,68,73,70,211,70.33,B,True,11
-Aditya,M,78,61,68,64,193,64.33,B,True,12
-Anika,F,76,59,63,61,183,61.0,B,True,13
-Rohan,M,73,55,49,58,162,54.0,C,True,14
-Arjun,M,69,45,52,48,145,48.33,C,True,15
+Student 7,F,99,97,96,94,287,95.67,A+,True,1
+Paramjeet,F,98,95,93,97,285,95.0,A+,True,2
+Abhinav, M,93,97,92,95,284,94.67,A+,True,3
+Student 17,F,95,93,91,96,280,93.33,A+,True,4
+Student 13,F,92,95,90,94,279,93.0,A+,True,5
+Student 3,F,94,91,89,93,273,91.0,A+,True,6
+Student 20,M,92,90,88,91,269,89.67,A,True,7
+Student 12,M,90,88,84,91,263,87.67,A,True,8
+Student 19,F,89,84,86,88,258,86.0,A,True,9
+Student 10,M,93,86,82,89,257,85.67,A,True,10
+Akanksha,F,91,79,84,94,257,85.67,A,True,10
+Student 15,F,88,82,85,87,254,84.67,A,True,12
+Student 1,F,88,83,79,86,248,82.67,A,True,13
+Student 8,M,89,81,86,80,247,82.33,A,True,14
+Student 14,M,85,79,81,83,243,81.0,A,True,15
+Student 11,F,85,78,80,82,240,80.0,A,True,16
+Student 18,M,80,76,78,79,233,77.67,A,True,17
+Student 4,M,82,74,71,77,222,74.0,B,True,18
+Student 16,M,77,70,72,75,217,72.33,B,True,19
+Kshitij,M,85,72,76,69,217,72.33,B,True,19
+Student 5,F,87,68,73,70,211,70.33,B,True,21
+Aalam,M,78,61,68,64,193,64.33,B,True,22
+Student 9,F,76,59,63,61,183,61.0,B,True,23
+Student 6,M,73,55,49,58,162,54.0,C,True,24
+Student 2,M,69,45,52,48,145,48.33,C,True,25
