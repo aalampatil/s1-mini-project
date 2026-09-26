@@ -1,0 +1,16 @@
+name,gender,attendance,math,science,english,total,average,grade,passed,rank
+Myra,F,99,97,96,94,287,95.67,A+,True,1
+Diya,F,98,95,93,97,285,95.0,A+,True,2
+Meera,F,94,91,89,93,273,91.0,A+,True,3
+Aarav, M,96,88,92,85,265,88.33,A,True,4
+Reyansh,M,93,86,82,89,257,85.67,A,True,5
+Ananya,F,91,79,84,88,251,83.67,A,True,6
+Ishita,F,88,83,79,86,248,82.67,A,True,7
+Vihaan,M,89,81,86,80,247,82.33,A,True,8
+Kabir,M,82,74,71,77,222,74.0,B,True,9
+Vivaan,M,85,72,76,69,217,72.33,B,True,10
+Saanvi,F,87,68,73,70,211,70.33,B,True,11
+Aditya,M,78,61,68,64,193,64.33,B,True,12
+Anika,F,76,59,63,61,183,61.0,B,True,13
+Rohan,M,73,55,49,58,162,54.0,C,True,14
+Arjun,M,69,45,52,48,145,48.33,C,True,15

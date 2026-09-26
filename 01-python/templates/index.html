@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Performance Analytics</title>
+    <style>
+        :root {
+            --navy: #183b56;
+            --blue: #4c78a8;
+            --background: #f4f7fb;
+            --muted: #607d8b;
+            --border: #dbe4ee;
+        }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            font-family: "Segoe UI", Arial, sans-serif;
+            background: var(--background);
+            color: #243b53;
+        }
+        header {
+            padding: 28px 5%;
+            color: white;
+            background: var(--navy);
+        }
+        header h1 { margin: 0 0 6px; font-size: 30px; }
+        header p { margin: 0; color: #d9eaf7; }
+        main { width: 90%; max-width: 1400px; margin: 24px auto; }
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        .card, .panel {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            box-shadow: 0 3px 12px rgba(24, 59, 86, .06);
+        }
+        .card { padding: 18px; }
+        .card-label { color: var(--muted); font-size: 14px; }
+        .card-value { color: var(--navy); font-size: 27px; font-weight: 700; margin-top: 8px; }
+        .layout {
+            display: grid;
+            grid-template-columns: 1fr 1.25fr;
+            gap: 24px;
+        }
+        .panel { padding: 18px; }
+        h2 { color: var(--navy); font-size: 19px; margin: 0 0 14px; }
+        .chart { width: 100%; border-radius: 8px; border: 1px solid var(--border); }
+        table { border-collapse: collapse; width: 100%; font-size: 14px; }
+        th, td { border-bottom: 1px solid var(--border); padding: 10px 7px; text-align: center; }
+        th { background: #edf4fa; color: var(--navy); }
+        td:nth-child(2) { text-align: left; }
+        .passed { color: #25834a; font-weight: 600; }
+        .failed { color: #c0392b; font-weight: 600; }
+        button {
+            border: 0; border-radius: 7px; padding: 11px 16px;
+            background: var(--blue); color: white; cursor: pointer; font-size: 14px;
+        }
+        button:hover { background: var(--navy); }
+        .actions { margin-top: 16px; display: flex; gap: 10px; align-items: center; }
+        #message { color: #25834a; font-size: 14px; }
+        @media (max-width: 900px) {
+            .cards { grid-template-columns: repeat(2, 1fr); }
+            .layout { grid-template-columns: 1fr; }
+        }
+        @media (max-width: 500px) {
+            .cards { grid-template-columns: 1fr; }
+            main { width: 94%; }
+            table { font-size: 12px; }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Student Performance Analytics</h1>
+        <p>Explore marks, attendance, grades, and rankings in your browser.</p>
+    </header>
+    <main>
+        <section class="cards">
+            <div class="card"><div class="card-label">Students</div><div class="card-value" id="students">-</div></div>
+            <div class="card"><div class="card-label">Class Average</div><div class="card-value" id="average">-</div></div>
+            <div class="card"><div class="card-label">Pass Rate</div><div class="card-value" id="pass-rate">-</div></div>
+            <div class="card"><div class="card-label">Top Student</div><div class="card-value" id="top-student">-</div></div>
+        </section>
+        <section class="layout">
+            <div class="panel">
+                <h2>Ranked Students</h2>
+                <table>
+                    <thead>
+                        <tr><th>Rank</th><th>Name</th><th>Attendance</th><th>Average</th><th>Grade</th><th>Status</th></tr>
+                    </thead>
+                    <tbody id="student-table"></tbody>
+                </table>
+                <div class="actions">
+                    <button id="export-button">Export Report</button>
+                    <span id="message"></span>
+                </div>
+            </div>
+            <div class="panel">
+                <h2>Performance Charts</h2>
+                <img class="chart" src="/output/student_performance_dashboard.png" alt="Student performance charts">
+            </div>
+        </section>
+    </main>
+    <script>
+        async function loadDashboard() {
+            const response = await fetch("/api/dashboard");
+            const dashboard = await response.json();
+            const summary = dashboard.summary;
+            document.getElementById("students").textContent = summary.students;
+            document.getElementById("average").textContent = summary.average;
+            document.getElementById("pass-rate").textContent = `${summary.pass_rate}%`;
+            document.getElementById("top-student").textContent = summary.top_student;
+
+            const table = document.getElementById("student-table");
+            table.innerHTML = dashboard.students.map(student => `
+                <tr>
+                    <td>${student.rank}</td>
+                    <td>${student.name}</td>
+                    <td>${student.attendance.toFixed(1)}%</td>
+                    <td>${student.average.toFixed(2)}</td>
+                    <td>${student.grade}</td>
+                    <td class="${student.status === "Passed" ? "passed" : "failed"}">${student.status}</td>
+                </tr>
+            `).join("");
+        }
+
+        document.getElementById("export-button").addEventListener("click", async () => {
+            const response = await fetch("/api/export", { method: "POST" });
+            const result = await response.json();
+            document.getElementById("message").textContent = result.message;
+            document.querySelector(".chart").src = `/output/student_performance_dashboard.png?${Date.now()}`;
+        });
+
+        loadDashboard();
+    </script>
+</body>
+</html>
