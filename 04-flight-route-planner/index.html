@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SkyPath – Flight Route Planner</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <svg viewBox="0 0 32 32" width="30" height="30" aria-hidden="true"><rect width="32" height="32" rx="8" fill="#0e2238"/><path d="M26 6 L14 18 M26 6 L19 26 L14 18 L6 13 Z" fill="none" stroke="#fbbf24" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/></svg>
+    <div><h1>SkyPath</h1><p>Flight Route Planner · DAA Minor Project</p></div>
+  </div>
+  <div class="topstats" id="topstats"></div>
+</header>
+
+<main class="layout">
+  <!-- ============================ controls ============================ -->
+  <aside class="sidebar">
+    <section class="card">
+      <h2>Flight</h2>
+      <label>Origin <select id="selOrigin"></select></label>
+      <div class="swaprow"><button id="btnSwap" class="chip" title="Swap origin and destination">⇅ swap</button></div>
+      <label>Destination <select id="selDest"></select></label>
+      <label>Aircraft <select id="selAircraft"></select></label>
+      <div class="hint" id="acInfo"></div>
+    </section>
+
+    <section class="card">
+      <h2>Algorithm</h2>
+      <select id="selAlgo">
+        <option value="astar">A* (great-circle heuristic)</option>
+        <option value="dijkstra">Dijkstra (binary heap)</option>
+        <option value="bellman">Bellman–Ford</option>
+        <option value="floyd">Floyd–Warshall (all pairs)</option>
+        <option value="bfs">BFS – fewest stops (baseline)</option>
+      </select>
+      <div class="hint" id="algoInfo"></div>
+    </section>
+
+    <section class="card">
+      <h2>Objectives <span class="sub">multi-objective weights</span></h2>
+      <div class="presets">
+        <button class="chip" data-preset="fast">⏱ Fastest</button>
+        <button class="chip" data-preset="fuel">⛽ Min fuel</button>
+        <button class="chip" data-preset="green">🌱 Greenest</button>
+        <button class="chip" data-preset="bal">⚖ Balanced</button>
+      </div>
+      <div class="slider"><label>Flight time <output id="oT"></output></label><input type="range" id="wT" min="0" max="100" value="34"></div>
+      <div class="slider"><label>Fuel burn <output id="oF"></output></label><input type="range" id="wF" min="0" max="100" value="33"></div>
+      <div class="slider"><label>Environmental impact (CO₂e) <output id="oE"></output></label><input type="range" id="wE" min="0" max="100" value="33"></div>
+    </section>
+
+    <section class="card">
+      <h2>Airspace &amp; conditions</h2>
+      <label class="check"><input type="checkbox" id="cWind" checked> Jet-stream wind</label>
+      <label class="check"><input type="checkbox" id="cWx" checked> Weather &amp; turbulence cells</label>
+      <div class="slider sub-slider"><label>Weather penalty <output id="oWx"></output></label><input type="range" id="rWx" min="0" max="4" step="0.1" value="1.5"></div>
+      <label class="check"><input type="checkbox" id="cZones" checked> Respect restricted airspace</label>
+      <label class="check"><input type="checkbox" id="cAtm" checked> Account for air-traffic load (ATM)</label>
+      <div class="slider sub-slider"><label>Airport congestion <output id="oCong"></output></label><input type="range" id="rCong" min="0" max="2" step="0.05" value="1"></div>
+      <label class="check"><input type="checkbox" id="cNet" checked> Show airway network</label>
+    </section>
+
+    <section class="card">
+      <h2>Scenario editor</h2>
+      <div class="slider"><label>Cell / zone radius <output id="oRad"></output></label><input type="range" id="rRad" min="200" max="1600" step="50" value="600"></div>
+      <div class="slider"><label>Storm severity <output id="oSev"></output></label><input type="range" id="rSev" min="0.1" max="1" step="0.05" value="0.7"></div>
+      <div class="btnrow">
+        <button class="chip" id="btnRandWx">🎲 Random weather</button>
+        <button class="chip" id="btnClearWx">Clear weather</button>
+        <button class="chip" id="btnReset">↺ Reset scenario</button>
+      </div>
+      <p class="hint">Use the tool buttons on the map to place storms, no-fly zones or close airports.</p>
+    </section>
+  </aside>
+
+  <!-- ============================ map + results ============================ -->
+  <section class="stage">
+    <div class="mapwrap" id="mapwrap">
+      <canvas id="map"></canvas>
+      <div class="maptools" id="maptools">
+        <button data-tool="select" class="on" title="Pick origin / destination">✈ Select</button>
+        <button data-tool="storm" title="Place a storm cell">⛈ Storm</button>
+        <button data-tool="zone" title="Place a restricted zone">⛔ No-fly</button>
+        <button data-tool="close" title="Close / reopen an airport">🚧 Close airport</button>
+        <button data-tool="erase" title="Remove a storm / zone">⌫ Erase</button>
+      </div>
+      <div class="mapctl">
+        <button id="zIn" title="Zoom in">＋</button><button id="zOut" title="Zoom out">−</button><button id="zReset" title="Reset view">⌂</button>
+      </div>
+      <div class="legend">
+        <span><i class="dot o"></i>Origin</span><span><i class="dot d"></i>Destination</span>
+        <span><i class="ln a"></i>Route</span><span><i class="sw wx"></i>Weather</span><span><i class="sw zn"></i>No-fly</span>
+      </div>
+      <div class="maphint" id="mapHint"></div>
+      <div class="tooltip" id="tip"></div>
+    </div>
+
+    <div class="tabs">
+      <nav id="tabbar">
+        <button data-tab="route" class="on">Route</button>
+        <button data-tab="algos">Algorithms</button>
+        <button data-tab="pareto">Pareto front</button>
+        <button data-tab="atm">Air traffic (ATM)</button>
+        <button data-tab="scale">Scalability</button>
+        <button data-tab="theory">Theory</button>
+      </nav>
+      <div class="panes">
+        <!-- ROUTE -->
+        <div class="pane on" id="pane-route">
+          <div class="routehead">
+            <div id="routeTitle" class="routetitle"></div>
+            <div class="routeactions"><button class="chip" id="btnPlay">▶ Fly route</button></div>
+          </div>
+          <div class="kpis" id="kpis"></div>
+          <div id="routeNote"></div>
+          <div class="tablewrap"><table id="legTable"></table></div>
+        </div>
+
+        <!-- ALGORITHMS -->
+        <div class="pane" id="pane-algos">
+          <p class="lead">Every algorithm is run on the <b>same</b> graph, weights and OD pair. Exact methods must report the same optimal cost – they differ in the work they do.</p>
+          <div class="btnrow"><button class="chip primary" id="btnCompare">▶ Run comparison</button><span class="hint" id="cmpInfo"></span></div>
+          <div class="tablewrap"><table id="cmpTable"></table></div>
+          <canvas id="cmpChart" class="chart short"></canvas>
+        </div>
+
+        <!-- PARETO -->
+        <div class="pane" id="pane-pareto">
+          <p class="lead">Multi-objective search returns the set of <b>non-dominated</b> routes: no other route is at least as good in time, fuel <i>and</i> CO₂e. Click a point or a row to fly that route.</p>
+          <div class="btnrow axes"><label>X axis <select id="axX"></select></label><label>Y axis <select id="axY"></select></label><span class="hint" id="parInfo"></span></div>
+          <div class="split">
+            <canvas id="parChart" class="chart"></canvas>
+            <div class="tablewrap"><table id="parTable"></table></div>
+          </div>
+        </div>
+
+        <!-- ATM -->
+        <div class="pane" id="pane-atm">
+          <p class="lead">Many flights share the same airways. Each link has a capacity and delay grows with load (BPR function). Compare <b>uncoordinated</b> routing with <b>ATM-coordinated</b> flow management.</p>
+          <div class="btnrow axes">
+            <label>Flights <output id="oFl"></output><input type="range" id="rFl" min="50" max="1500" step="50" value="600"></label>
+            <label>Capacity × <output id="oCap"></output><input type="range" id="rCap" min="0.3" max="2" step="0.1" value="0.5"></label>
+            <button class="chip primary" id="btnAtm">▶ Simulate traffic</button>
+          </div>
+          <div class="btnrow axes" id="atmOverlayRow" style="display:none"><span class="hint">Show link utilisation on map:</span>
+            <label class="check"><input type="radio" name="ov" value="none" checked> off</label>
+            <label class="check"><input type="radio" name="ov" value="selfish"> uncoordinated</label>
+            <label class="check"><input type="radio" name="ov" value="atm"> ATM</label>
+            <label class="check"><input type="radio" name="ov" value="atm+rr"> ATM + re-route</label>
+          </div>
+          <div class="split">
+            <div class="tablewrap"><table id="atmTable"></table></div>
+            <canvas id="atmChart" class="chart"></canvas>
+          </div>
+        </div>
+
+        <!-- SCALABILITY -->
+        <div class="pane" id="pane-scale">
+          <p class="lead">Computational experiments on synthetic random airport graphs (A350 profile, random weather &amp; no-fly zones). Runtime is the mean time of one source–destination query over 10 random pairs.</p>
+          <div class="btnrow">
+            <button class="chip primary" id="btnB1">▶ Airport count (graph size)</button>
+            <button class="chip primary" id="btnB2">▶ Airspace complexity</button>
+            <button class="chip primary" id="btnB3">▶ Traffic load</button>
+            <span class="hint" id="benchInfo"></span>
+          </div>
+          <div class="split">
+            <canvas id="benchA" class="chart"></canvas>
+            <canvas id="benchB" class="chart"></canvas>
+          </div>
+          <div id="benchNote"></div>
+          <div class="tablewrap"><table id="benchTable"></table></div>
+        </div>
+
+        <!-- THEORY -->
+        <div class="pane" id="pane-theory">
+          <div class="theory">
+            <h3>Problem model</h3>
+            <p>Airports are <b>vertices</b>; airways are <b>directed, weighted edges</b>. Each edge carries four metrics computed from the scenario: <code>time</code>, <code>fuel</code>, <code>CO₂e</code> and a weather <code>risk</code> exposure. For the weighted-sum objective the planner minimises
+              <code>cost(e) = w<sub>t</sub>·time/ref<sub>t</sub> + w<sub>f</sub>·fuel/ref<sub>f</sub> + w<sub>e</sub>·CO₂e/ref<sub>e</sub></code>, where each <code>ref</code> is the network-average per-km value so the three terms are comparable. All costs are non-negative, so Dijkstra / A* are correct.</p>
+            <h3>What changes an edge's weight?</h3>
+            <ul>
+              <li><b>Aircraft</b> – cruise speed, burn rate, range (longer edges are removed) and take-off/landing fuel.</li>
+              <li><b>Jet stream</b> – tail/head-wind component = jet speed(latitude) × sin(bearing); eastbound legs are faster.</li>
+              <li><b>Weather cells</b> – average severity sampled along the great circle inflates flight time and fuel by <code>1 + penalty × severity</code>.</li>
+              <li><b>Restricted airspace</b> – an edge whose great circle enters a no-fly circle is deleted from the graph.</li>
+              <li><b>Airport congestion</b> – taxi-out queue and arrival holding time depend on the airport's hub tier.</li>
+              <li><b>ATM sector load</b> – busy airways add a delay factor <code>1 + 0.3·util⁴</code>.</li>
+              <li><b>Long legs</b> – carrying fuel for a long leg increases burn (<code>1 + 0.4·(d/range)²</code>), so a stop can save fuel but costs time.</li>
+            </ul>
+            <h3>Algorithms &amp; complexity (V airports, E airways)</h3>
+            <table class="ctable">
+              <tr><th>Algorithm</th><th>Time</th><th>Space</th><th>Role in the project</th></tr>
+              <tr><td>Dijkstra (binary heap)</td><td>O((V+E) log V)</td><td>O(V)</td><td>Exact single-source shortest path with non-negative weights</td></tr>
+              <tr><td>A*</td><td>O((V+E) log V) worst case</td><td>O(V)</td><td>Dijkstra guided by the great-circle lower bound <code>h(v)=gc(v,dest)·min(cost/km)</code> – admissible &amp; consistent, so still optimal</td></tr>
+              <tr><td>Bellman–Ford</td><td>O(V·E)</td><td>O(V)</td><td>Dynamic-programming baseline (also handles negative weights); stops early when no edge relaxes</td></tr>
+              <tr><td>Floyd–Warshall</td><td>O(V³)</td><td>O(V²)</td><td>All-pairs table – useful when many queries share one network</td></tr>
+              <tr><td>BFS</td><td>O(V+E)</td><td>O(V)</td><td>Fewest-stops baseline; ignores weights, so not cost-optimal</td></tr>
+              <tr><td>Pareto label-setting</td><td>O(K·E·K) with label cap K</td><td>O(K·V)</td><td>Multi-objective: keeps every non-dominated (time, fuel, CO₂e) label per airport; ε-dominance (1%) prunes near-duplicates. Exact bi/tri-objective shortest path is NP-hard in the worst case.</td></tr>
+              <tr><td>ATM flow assignment</td><td>O(F·(V+E) log V) per round</td><td>O(E)</td><td>F flights routed sequentially with load-dependent costs (+ rip-up &amp; re-route rounds)</td></tr>
+            </table>
+            <h3>Reading the results</h3>
+            <ul>
+              <li>On a graph this small all exact algorithms return the <b>same cost</b>; A* expands fewer vertices than Dijkstra. On large random graphs the heuristic is weak, so A* may expand fewer vertices yet not run faster – the experiment shows both effects.</li>
+              <li>Weighted-sum optimisation only finds "supported" trade-offs; the Pareto tab shows the whole front.</li>
+              <li>Fuel burn, CO₂e and flight time are modelled with simplified, illustrative formulas – this is an algorithms study, not an operational flight planner.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<script src="js/geo.js"></script>
+<script src="js/data.js"></script>
+<script src="js/graph.js"></script>
+<script src="js/algorithms.js"></script>
+<script src="js/atm.js"></script>
+<script src="js/benchmark.js"></script>
+<script src="js/charts.js"></script>
+<script src="js/map.js"></script>
+<script src="js/ui.js"></script>
+</body>
+</html>

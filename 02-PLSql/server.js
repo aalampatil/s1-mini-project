@@ -1,6 +1,10 @@
 const path = require("node:path");
 const express = require("express");
 const oracledb = require("oracledb");
+const dotenv = require("dotenv");
+dotenv.config({
+  path: "./env"
+});
 
 const app = express();
 const port = Number(process.env.PORT || 5000);

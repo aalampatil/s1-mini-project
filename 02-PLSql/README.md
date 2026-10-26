@@ -42,7 +42,7 @@ Set an Oracle connection string, then start the app:
 
 ```powershell
 $env:AIRLINE_DB_USER="airline_app"
-$env:AIRLINE_DB_PASSWORD="your-password"
+$env:AIRLINE_DB_PASSWORD="Airline123"
 $env:AIRLINE_DB_DSN="localhost:1521/XEPDB1"
 npm start
 ```
